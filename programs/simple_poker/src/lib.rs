@@ -24,7 +24,7 @@ pub mod simple_poker {
         game.players = [Pubkey::default(); MAX_PLAYERS as usize];
         game.rolls = [0; MAX_PLAYERS as usize];
         game.winner = None;
-        game.prize_pool = 0;
+        game.prize_pool = stake_amount*(max_players as u64);
         Ok(())
     }
 
