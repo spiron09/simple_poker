@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SimplePoker } from "../target/types/simple_poker";
-import { assert } from "chai";
+import { assert, expect } from "chai";
 
 describe("simple_poker", () => {
   // Configure the client to use the local cluster.
@@ -14,11 +14,16 @@ describe("simple_poker", () => {
   const gameCreator = lobbyCreator;
   const player1 = gameCreator;
   const player2 = anchor.web3.Keypair.generate();
+  const player3 = anchor.web3.Keypair.generate();
+  const player4 = anchor.web3.Keypair.generate();
   let currentGameId: anchor.BN
   const stakeAmount = new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL);
+  const maxPlayers = 4;
 
   console.log("Player 1:", player1.publicKey.toBase58());
   console.log("Player 2:", player2.publicKey.toBase58());
+  console.log("Player 3:", player3.publicKey.toBase58());
+  console.log("Player 4:", player3.publicKey.toBase58());
 
   const [lobbyPDA, lobbyBump] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("game_lobby")],
@@ -40,13 +45,15 @@ describe("simple_poker", () => {
 
   before(async () => {
     // Airdrop SOL to all accounts and wait for confirmation
-    const solToAirdrop = 100 * anchor.web3.LAMPORTS_PER_SOL;
+    const solToAirdrop = 2 * anchor.web3.LAMPORTS_PER_SOL;
     await airdropSol(lobbyCreator.publicKey, solToAirdrop);
     await airdropSol(player1.publicKey, solToAirdrop);
     await airdropSol(player2.publicKey, solToAirdrop);
+    await airdropSol(player3.publicKey, solToAirdrop);
+    await airdropSol(player4.publicKey, solToAirdrop);
   });
 
-  it("Initializes the game lobby", async () => {
+  it("Game Lobby Init", async () => {
     // Add your test here.
     await program.methods
       .initGameLobby()
@@ -58,35 +65,32 @@ describe("simple_poker", () => {
 
     const lobbyAccount = await program.account.gameLobby.fetch(lobbyPDA);
 
-    assert.strictEqual(Number(lobbyAccount.lastGameId), 0, "Last game ID should be 0");
+    assert.strictEqual(Number(lobbyAccount.currentGameId), 0, "Last game ID should be 0");
 
   });
 
-  it("Creates a new game", async () => {
+  it("Create Game", async () => {
     const lobbyAccount = await program.account.gameLobby.fetch(lobbyPDA);
-    currentGameId = lobbyAccount.lastGameId;
+    currentGameId = lobbyAccount.currentGameId;
     console.log("Current game ID:", Number(currentGameId));
 
     const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("game"), currentGameId.toBuffer("le", 8)],
       program.programId,
     );
-    
+
     const [vaultPDA] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("game_vault"), currentGameId.toBuffer("le", 8)],
       program.programId,
     );
 
     await program.methods
-      .createGame(stakeAmount)
+      .createGame(stakeAmount, maxPlayers)
       .accounts({
-        gameAccount: gamePDA,
-        vaultAccount: vaultPDA,
         gameCreator: player1.publicKey
       })
       .signers([player1])
       .rpc();
-
 
     const gameAccount = await program.account.game.fetch(gamePDA);
 
@@ -122,13 +126,13 @@ describe("simple_poker", () => {
       program.programId,
     );
 
-    console.log("Current game ID:", currentGameId);
+    console.log("Current game ID:", Number(currentGameId));
     console.log("Game PDA:", gamePDA.toBase58());
     console.log("Vault PDA:", vaultPDA.toBase58());
 
     // Player One joins
     await program.methods
-      .joinGame(currentGameId)
+      .joinGame()
       .accounts({
         player: player1.publicKey
       })
@@ -139,8 +143,9 @@ describe("simple_poker", () => {
     let vaultBalance = await provider.connection.getBalance(vaultPDA);
     // console.log(`Vault Account Amount after p1 joins` + vaultAccount.amount);
 
+    console.log("Player count:", gameAccount.playerCount);
     assert.strictEqual(
-      gameAccount.players.length,
+      gameAccount.playerCount,
       1,
       "Player one was not added to the game",
     );
@@ -151,7 +156,7 @@ describe("simple_poker", () => {
 
     // Player Two joins
     await program.methods
-      .joinGame(currentGameId)
+      .joinGame()
       .accounts({
         player: player2.publicKey
       })
@@ -161,10 +166,60 @@ describe("simple_poker", () => {
     gameAccount = await program.account.game.fetch(gamePDA);
     vaultBalance = await provider.connection.getBalance(vaultPDA);
 
+    console.log("Player count:", gameAccount.playerCount);
+
     assert.strictEqual(
-      gameAccount.players.length,
+      gameAccount.playerCount,
       2,
       "Player two was not added to the game",
+    );
+    assert.ok(
+      gameAccount.players[1].equals(player2.publicKey),
+      "Player two's public key is incorrect",
+    );
+
+    // Player Three joins
+    await program.methods
+      .joinGame()
+      .accounts({
+        player: player3.publicKey
+      })
+      .signers([player3])
+      .rpc();
+
+    gameAccount = await program.account.game.fetch(gamePDA);
+    vaultBalance = await provider.connection.getBalance(vaultPDA);
+
+    console.log("Player count:", gameAccount.playerCount);
+
+    assert.strictEqual(
+      gameAccount.playerCount,
+      3,
+      "Player three was not added to the game",
+    );
+    assert.ok(
+      gameAccount.players[2].equals(player3.publicKey),
+      "Player three's public key is incorrect",
+    );
+
+    // Player Four joins
+    await program.methods
+      .joinGame()
+      .accounts({
+        player: player4.publicKey
+      })
+      .signers([player4])
+      .rpc();
+
+    gameAccount = await program.account.game.fetch(gamePDA);
+    vaultBalance = await provider.connection.getBalance(vaultPDA);
+
+    console.log("Player count:", gameAccount.playerCount);
+
+    assert.strictEqual(
+      gameAccount.playerCount,
+      4,
+      "Player three was not added to the game",
     );
     assert.deepStrictEqual(
       gameAccount.state,
@@ -179,7 +234,7 @@ describe("simple_poker", () => {
       program.programId,
     );
 
-    console.log("Determining winner for game ID:", currentGameId);
+    console.log("Determining winner for game ID:", Number(currentGameId));
     console.log("Game PDA:", gamePDA.toBase58());
 
     // Verify game is in InProgress state before determining winner
@@ -191,13 +246,14 @@ describe("simple_poker", () => {
     );
 
     // Determine winner
-    await program.methods
-      .determineWinner(currentGameId)
+    const tx = await program.methods
+      .determineWinner()
       .accounts({
         gameAccount: gamePDA,
       })
       .rpc();
 
+    console.log("Signature:", tx);
     // Fetch updated game account
     gameAccount = await program.account.game.fetch(gamePDA);
 
@@ -232,14 +288,14 @@ describe("simple_poker", () => {
     );
 
     // Verify all rolls are between 1 and 10
-    gameAccount.rolls.forEach((roll, index) => {
-      assert.ok(
-        roll >= 1 && roll <= 10,
-        `Player ${index} roll should be between 1 and 10, got ${roll}`
-      );
-    });
+    const playerCount = gameAccount.playerCount;
+    for (let i = 0; i<playerCount; i++) {
+      const roll = gameAccount.rolls[i];
+      expect(roll).to.be.greaterThan(0);
+      expect(roll).to.be.lessThan(11);
+    }
 
-    console.log("Player rolls:", gameAccount.rolls);
+    console.log("Player rolls:", Array.from(gameAccount.rolls));
     console.log("Winner:", gameAccount.winner.toBase58());
   });
 
@@ -273,11 +329,10 @@ describe("simple_poker", () => {
     }
 
     const beforeBalance = await provider.connection.getBalance(winnerKey);
-    
+
     await program.methods
-      .claimPrize(currentGameId)
+      .claimPrize()
       .accounts({
-        lobbyAccount: lobbyPDA,
         winner: winnerKey,
       })
       .signers([winnerKeypair])

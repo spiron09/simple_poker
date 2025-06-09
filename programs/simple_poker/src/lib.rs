@@ -1,38 +1,40 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::*;
 declare_id!("ACX7FXn1jP1j1X4TNVVq4Fxw5Mot8kicwTeBh3yBno8B");
-const MAX_PLAYERS: u8 = 2;
+const MAX_PLAYERS: u8 = 10;
 
 #[program]
 pub mod simple_poker {
     use super::*;
     pub fn init_game_lobby(ctx: Context<InitGameLobby>) -> Result<()> {
-        ctx.accounts.lobby_account.last_game_id = 0;
+        ctx.accounts.lobby_account.current_game_id = 0;
         Ok(())
     }
 
-    pub fn create_game(ctx: Context<CreateGame>, stake_amount: u64) -> Result<()> {
+    pub fn create_game(ctx: Context<CreateGame>, stake_amount: u64, max_players: u8) -> Result<()> {
 
-        let game_id = ctx.accounts.lobby_account.last_game_id;
+        let game_id = ctx.accounts.lobby_account.current_game_id;
         let game = &mut ctx.accounts.game_account;
         
         game.creator = ctx.accounts.game_creator.key();
         game.id = game_id;
         game.state = GameState::Open;
         game.stake_amount = stake_amount;
-        game.max_players = MAX_PLAYERS;
-        game.players = Vec::with_capacity(MAX_PLAYERS as usize);
-        game.rolls = Vec::with_capacity(MAX_PLAYERS as usize);
+        game.max_players = max_players;
+        game.players = [Pubkey::default(); MAX_PLAYERS as usize];
+        game.rolls = [0; MAX_PLAYERS as usize];
         game.winner = None;
         game.prize_pool = 0;
         Ok(())
     }
 
-    pub fn join_game(ctx: Context<JoinGame>, game_id: u64) -> Result<()> {
+    pub fn join_game(ctx: Context<JoinGame>) -> Result<()> {
 
         let game = &mut ctx.accounts.game_account;
         let player = &ctx.accounts.player;
         let vault = &mut ctx.accounts.game_vault;
+        let player_index = game.player_count;
+
         require!(game.state == GameState::Open, GameError::GameNotOpen);
 
         let cpi_context = CpiContext::new(
@@ -47,10 +49,12 @@ pub mod simple_poker {
         
         game.prize_pool += game.stake_amount;
 
-        msg!("Player {} joined the game!", player.key());
-        game.players.push(player.key());
+        game.players[player_index as usize] = player.key();
+        game.player_count += 1;
 
-        if (game.players.len() as u8) == game.max_players {
+        msg!("Player {} joined the game!", player.key());
+
+        if (game.player_count as u8) == game.max_players {
             game.state = GameState::InProgress;
             msg!("The game is now full! The state is now InProgress.");
         }
@@ -58,7 +62,7 @@ pub mod simple_poker {
         Ok(())
     }
 
-    pub fn determine_winner(ctx: Context<DetermineWinner>, game_id: u64) -> Result<()> {
+    pub fn determine_winner(ctx: Context<DetermineWinner>) -> Result<()> {
         let game = &mut ctx.accounts.game_account;
         require!(game.state == GameState::InProgress, GameError::GameNotOpen);
         let clock = Clock::get()?;
@@ -67,10 +71,10 @@ pub mod simple_poker {
 
         let mut highest_roll: u8 = 0;
         let mut winner_index: usize = 0;
+        
+        let active_players = game.players[..game.player_count as usize].to_vec();
 
-        let players = game.players.clone();
-
-        for (i, player_key) in players.iter().enumerate(){
+        for (i, player_key) in active_players.iter().enumerate(){
             let combined_seed = random_seed.wrapping_add(i as u64).wrapping_add(u64::from_le_bytes([
                     player_key.to_bytes()[0],
                     player_key.to_bytes()[1],
@@ -83,7 +87,7 @@ pub mod simple_poker {
             ]));
 
             let roll = (combined_seed % 10 + 1) as u8;
-            game.rolls.push(roll);
+            game.rolls[i] = roll;
             msg!("Player {} rolled: {}", player_key, roll);
             if roll > highest_roll {
                 highest_roll = roll;
@@ -99,7 +103,7 @@ pub mod simple_poker {
         Ok(())
     }
 
-    pub fn claim_prize(ctx: Context<ClaimPrize>, game_id: u64) -> Result<()> {
+    pub fn claim_prize(ctx: Context<ClaimPrize>) -> Result<()> {
         let game = &ctx.accounts.game_account;
         let winner = &ctx.accounts.winner;
         let vault = &mut ctx.accounts.game_vault;
@@ -126,7 +130,7 @@ pub mod simple_poker {
 
         transfer(cpi_context, prize_pool)?;
         msg!("Prize of {} lamports transferred to winner", prize_pool);
-        ctx.accounts.lobby_account.last_game_id += 1;
+        ctx.accounts.lobby_account.current_game_id += 1;
         Ok(())
     }
 
@@ -141,7 +145,7 @@ pub enum GameState {
 
 #[account]
 pub struct GameLobby {
-    pub last_game_id: u64,
+    pub current_game_id: u64,
 }
 
 #[error_code]
@@ -166,9 +170,10 @@ pub struct Game {
     pub stake_amount: u64,
     pub max_players: u8,
     pub prize_pool: u64,
-    pub players: Vec<Pubkey>,
+    pub player_count: u8,
+    pub players: [Pubkey; MAX_PLAYERS as usize],
+    pub rolls: [u8; MAX_PLAYERS as usize],
     pub winner: Option<Pubkey>,
-    pub rolls: Vec<u8>,
 }
 
 #[derive(Accounts)]
@@ -197,16 +202,16 @@ pub struct CreateGame<'info> {
     #[account(
         init,
         payer = game_creator,
-        seeds = [b"game", lobby_account.last_game_id.to_le_bytes().as_ref()],
+        seeds = [b"game", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump,
-        space = 8 + 32 + 8 + 1 + 8 + 1 + 8 +(MAX_PLAYERS as usize * 32) + 1 + 32 + 8 + (MAX_PLAYERS as usize * 1) + 8,
+        space = 8 + 32 + 8 + 1 + 8 + 1 + (4 + (MAX_PLAYERS as usize * 32)) + (4 + (MAX_PLAYERS as usize * 1)) + (1 + 32) + 8 + 1,
     )]
     pub game_account: Account<'info, Game>,
     #[account(mut)]
     pub game_creator: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"game_vault", lobby_account.last_game_id.to_le_bytes().as_ref()],
+        seeds = [b"game_vault", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump,
     )]
     /// CHECK: Empty vault account used only for holding lamports, no data validation needed
@@ -215,17 +220,22 @@ pub struct CreateGame<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(game_id: u64)]
 pub struct JoinGame<'info> {
     #[account(
         mut,
-        seeds = [b"game", game_id.to_le_bytes().as_ref()],
+        seeds = [b"game_lobby"],
+        bump
+    )]
+    pub lobby_account: Account<'info, GameLobby>,
+    #[account(
+        mut,
+        seeds = [b"game", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump
     )]
     pub game_account: Account<'info, Game>,
     #[account(
         mut,
-        seeds = [b"game_vault", game_account.id.to_le_bytes().as_ref()],
+        seeds = [b"game_vault", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump,
     )]
     /// CHECK: Empty vault account used only for holding lamports, no data validation needed
@@ -236,35 +246,42 @@ pub struct JoinGame<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(game_id: u64)]
 pub struct DetermineWinner<'info> {
     #[account(
         mut,
-        seeds = [b"game", game_id.to_le_bytes().as_ref()],
+        seeds = [b"game_lobby"],
+        bump
+    )]
+    pub lobby_account: Account<'info, GameLobby>,
+    #[account(
+        mut,
+        seeds = [b"game", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump,
         constraint = game_account.state == GameState::InProgress
     )]
-    /// CHECK: Empty vault account used only for holding lamports, no data validation needed
     pub game_account: Account<'info, Game>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-#[instruction(game_id: u64)]
 pub struct ClaimPrize<'info> {
     #[account(
         mut,
-        seeds = [b"game", game_id.to_le_bytes().as_ref()],
+        seeds = [b"game_lobby"],
+        bump
+    )]
+    pub lobby_account: Account<'info, GameLobby>,
+    #[account(
+        mut,
+        seeds = [b"game", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump,
         constraint = game_account.winner.is_some() @ GameError::WinnerNotDetermined,
         constraint = game_account.winner.unwrap() == winner.key() @ GameError::NotTheWinner
     )]
     pub game_account: Account<'info, Game>,
-    #[account(mut)]
-    pub lobby_account: Account<'info, GameLobby>,
     #[account(
         mut,
-        seeds = [b"game_vault", game_account.id.to_le_bytes().as_ref()],
+        seeds = [b"game_vault", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump,
     )]
     /// CHECK: Empty vault account used only for holding lamports, no data validation needed
