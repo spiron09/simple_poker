@@ -136,7 +136,7 @@ pub mod simple_poker {
 
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
 pub enum GameState {
     Open,
     InProgress,
@@ -163,6 +163,7 @@ pub enum GameError {
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct Game {
     pub creator: Pubkey,
     pub id: u64,
@@ -204,7 +205,7 @@ pub struct CreateGame<'info> {
         payer = game_creator,
         seeds = [b"game", lobby_account.current_game_id.to_le_bytes().as_ref()],
         bump,
-        space = 8 + 32 + 8 + 1 + 8 + 1 + (4 + (MAX_PLAYERS as usize * 32)) + (4 + (MAX_PLAYERS as usize * 1)) + (1 + 32) + 8 + 1,
+        space = 8 + Game::INIT_SPACE
     )]
     pub game_account: Account<'info, Game>,
     #[account(mut)]
