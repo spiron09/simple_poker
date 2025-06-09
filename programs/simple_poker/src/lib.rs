@@ -36,7 +36,15 @@ pub mod simple_poker {
         let player_index = game.player_count;
 
         require!(game.state == GameState::Open, GameError::GameNotOpen);
+        require!(game.player_count < game.max_players, GameError::GameFull);
+        
+        let active_players = &game.players[..game.player_count as usize];
 
+        require!(
+            !active_players.contains(&player.key()),
+            GameError::AlreadyInGame
+        );
+        
         let cpi_context = CpiContext::new(
             ctx.accounts.system_program.to_account_info(),
             anchor_lang::system_program::Transfer {
@@ -47,7 +55,7 @@ pub mod simple_poker {
 
         anchor_lang::system_program::transfer(cpi_context, game.stake_amount as u64)?;
         
-        game.prize_pool += game.stake_amount;
+        // game.prize_pool += game.stake_amount;
 
         game.players[player_index as usize] = player.key();
         game.player_count += 1;
@@ -158,8 +166,10 @@ pub enum GameError {
     AlreadyJoined,
     #[msg("Only the declared winner can claim the prize.")]
     NotTheWinner,
-    #[msg("A winner has not been determined for this game yet.")] // NEW
+    #[msg("A winner has not been determined for this game yet.")]
     WinnerNotDetermined,
+    #[msg("User has joined the game already")]
+    AlreadyInGame
 }
 
 #[account]
@@ -288,6 +298,7 @@ pub struct ClaimPrize<'info> {
     /// CHECK: Empty vault account used only for holding lamports, no data validation needed
     pub game_vault: SystemAccount<'info>,
     #[account(mut)]
-    pub winner: Signer<'info>,
+    /// CHECK: Winner Acconunt, no data validation needed
+    pub winner: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }

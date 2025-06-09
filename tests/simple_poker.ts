@@ -23,7 +23,7 @@ describe("simple_poker", () => {
   console.log("Player 1:", player1.publicKey.toBase58());
   console.log("Player 2:", player2.publicKey.toBase58());
   console.log("Player 3:", player3.publicKey.toBase58());
-  console.log("Player 4:", player3.publicKey.toBase58());
+  console.log("Player 4:", player4.publicKey.toBase58());
 
   const [lobbyPDA, lobbyBump] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("game_lobby")],
@@ -213,7 +213,10 @@ describe("simple_poker", () => {
 
     gameAccount = await program.account.game.fetch(gamePDA);
     vaultBalance = await provider.connection.getBalance(vaultPDA);
-
+    
+    const joinedPlayers = Array.from(gameAccount.players);
+    console.log("Joined players:", joinedPlayers);
+    console.log("Vault balance:", vaultBalance);
     console.log("Player count:", gameAccount.playerCount);
 
     assert.strictEqual(
@@ -335,7 +338,7 @@ describe("simple_poker", () => {
       .accounts({
         winner: winnerKey,
       })
-      .signers([winnerKeypair])
+      .signers([])
       .rpc();
 
     const afterBalance = await provider.connection.getBalance(winnerKey);
