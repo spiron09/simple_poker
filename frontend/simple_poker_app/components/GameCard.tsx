@@ -148,7 +148,7 @@ export function GameCard({ game }: GameCardProps) {
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-4">
         <div>
-          <CardTitle>Game #{game.id.toString()}</CardTitle>
+          <CardTitle>Game {game.id.toString()}</CardTitle>
           <CardDescription className="mt-2">
             Prize Pool: {game.prizePool.toFixed(2)} SOL
           </CardDescription>

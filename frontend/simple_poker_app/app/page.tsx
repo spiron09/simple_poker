@@ -120,6 +120,7 @@ export default function Home() {
             <div className="text-center">
               <h2 className="text-3xl font-bold">Welcome to Simple Poker</h2>
               <p className="mt-2 text-lg text-muted-foreground">
+                This game has been deployed on the devnet, please import your devnet wallets with SOL to play.
                 Connect your wallet to join or create a game.
               </p>
             </div>

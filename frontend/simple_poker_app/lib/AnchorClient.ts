@@ -116,7 +116,7 @@ export async function CreateGame(
     const gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
     if (gameAccountInfo){
         console.log("A Game already initialized. Please Join the game or wait for it to complete");
-        return (Number(current_game_id)-1);
+        return Number(current_game_id);
     }
 
     try {
