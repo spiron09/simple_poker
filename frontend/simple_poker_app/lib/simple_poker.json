@@ -95,8 +95,7 @@
         },
         {
           "name": "winner",
-          "writable": true,
-          "signer": true
+          "writable": true
         },
         {
           "name": "system_program",
@@ -477,6 +476,11 @@
       "code": 6004,
       "name": "WinnerNotDetermined",
       "msg": "A winner has not been determined for this game yet."
+    },
+    {
+      "code": 6005,
+      "name": "AlreadyInGame",
+      "msg": "User has joined the game already"
     }
   ],
   "types": [
