@@ -14,49 +14,67 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { useProgram, CreateGame} from "@/lib/AnchorClient";
+import { toast } from "sonner"
 
 export function CreateGameForm() {
     const [stakeAmount, setStakeAmount] = useState(0.1);
     const [maxPlayers, setMaxPlayers] = useState(2);
-    const [description, setDescription] = useState("");
 
     // const isLoading = useAtomValue(gamesIsLoadingAtom);
     const setGames = useSetAtom(gamesAtom);
-    const setIsLoading = useSetAtom(gamesIsLoadingAtom);
-    const setError = useSetAtom(gamesErrorAtom);
+    const setGamesIsLoading = useSetAtom(gamesIsLoadingAtom);
+    const setGamesError = useSetAtom(gamesErrorAtom);
 
     const program = useProgram();
 
     const handleCreateGame = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (!program || !stakeAmount || !maxPlayers) {
+            console.error("Program not loaded or inputs are missing.");
+            // Show a simple error toast for validation failures
+            toast.error("Please ensure all fields are filled correctly.");
+            return;
+        }
+        
+        const toastId = toast.loading("Submitting transaction to create game...");
+
         if (!program || !stakeAmount || !maxPlayers){
             console.error("Program not loaded or inputs are missing.");
             return;
         }
 
-        setIsLoading(true);
-        setError(null);
+        setGamesIsLoading(true);
+        setGamesError(null);
 
         try {
             const stakeInLamports = new anchor.BN(stakeAmount * anchor.web3.LAMPORTS_PER_SOL);
-            const newGame = await CreateGame(program, stakeInLamports, maxPlayers, description);
+            const newGame = await CreateGame(program, stakeInLamports, maxPlayers);
 
             if(newGame){
+                toast.success("Game created successfully!", {
+                id: toastId,
+                description: `Game ID: ${newGame.id.toString()}`, // Example description
+            });
                 setGames((CurrentGames) => [...CurrentGames, newGame]);
                 setStakeAmount(0.1);
                 setMaxPlayers(4);
-                setDescription("");
             } else {
-                setError("Game could not be created.");
+                toast.error("Transaction succeeded, but failed to create game.", {
+                    id: toastId,
+                });
+                setGamesError("Game could not be created.");
             }
         } catch (err) {
                 console.error("Failed to create game", err);
-                setError("Failed to create the game. See console for details.");
+                toast.error("Failed to create the game. Please try again.", {
+                    id: toastId,
+                });
+                setGamesError("Failed to create the game. See console for details.");
         } finally {
-            setIsLoading(false);
+            setGamesIsLoading(false);
         }
     };
 
@@ -76,7 +94,7 @@ export function CreateGameForm() {
                 <Input
                     id="stake_amount"
                     type="number"
-                    placeholder="0.1"
+                    // placeholder="0.1"
                     required
                     value={stakeAmount}
                     onChange={(e) => setStakeAmount(Number(e.target.value))}
@@ -88,24 +106,12 @@ export function CreateGameForm() {
                 <Input
                     id="max_players"
                     type="number"
-                    placeholder="2"
+                    // placeholder="2"
                     required
                     value={maxPlayers}
                     onChange={(e) => setMaxPlayers(Number(e.target.value))}
                 />
                 </div>
-
-                {/* <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                    id="description"
-                    type="text"
-                    placeholder="Sample Game"
-                    required
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                />
-                </div> */}
             </div>
             </form>
         </CardContent>

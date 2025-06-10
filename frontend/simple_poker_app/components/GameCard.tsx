@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { type Game } from "@/lib/types";
 import { useProgram, JoinGame, DetermineWinner, ClaimWinnings } from "@/lib/AnchorClient";
-import { useAtom, useSetAtom, useAtomValue } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
 import { useWallet } from "@solana/wallet-adapter-react";
 interface GameCardProps {
