@@ -109,17 +109,16 @@ export async function CreateGame(
         [Buffer.from("game"), current_game_id.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
-    let gameAccountInfo;
 
     console.log("Current Game ID:", Number(current_game_id));
-    try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
 
-    } catch(error) {
-        console.log("A Game already initialized. Please Join the game or wait for it to complete", error);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
+    if (gameAccountInfo){
+        console.log("A Game already initialized. Please Join the game or wait for it to complete");
         return (Number(current_game_id)-1);
     }
+
     try {
         const tx_signature = await program.methods
             .createGame(stakeAmount, maxPlayers)
