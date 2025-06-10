@@ -109,15 +109,18 @@ export async function CreateGame(
         [Buffer.from("game"), current_game_id.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
-    
-    const gameAccountData = await program.account.game.fetch(gamePDA);
-    const gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
+    let gameAccountData, gameAccountInfo;
 
-    if (gameAccountInfo) {
-        console.log("Game already initialized. Please Join the game or wait for it to complete");
-        return mapOnChainDataToGame(gameAccountData);
+    if(Number(lobbyAccountData.currentGameId) !== 0){
+        gameAccountData = await program.account.game.fetch(gamePDA);
+        gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
+
+        if (gameAccountInfo) {
+            console.log("Game already initialized. Please Join the game or wait for it to complete");
+            return mapOnChainDataToGame(gameAccountData);
+        }
+
     }
-
     try {
         const tx_signature = await program.methods
             .createGame(stakeAmount, maxPlayers)
