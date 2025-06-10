@@ -1,6 +1,6 @@
 "use client";
 
-import { useAtom } from "jotai";
+import { useSetAtom, useAtom } from "jotai";
 import { gamesAtom, gamesErrorAtom, gamesIsLoadingAtom } from "@/store/gameState";
 import { GameCard } from "@/components/GameCard";
 import { useProgram } from "@/lib/AnchorClient";
@@ -10,8 +10,8 @@ import { Game } from "@/lib/types";
 export function GameList() {
 
   const [games, setGames] = useAtom(gamesAtom);
-  const [isLoading, setIsLoading] = useAtom(gamesIsLoadingAtom);
-  const [gamesError, setError] = useAtom(gamesErrorAtom);
+  const setIsLoading = useSetAtom(gamesIsLoadingAtom);
+  const setError = useSetAtom(gamesErrorAtom);
 
   
   const program = useProgram();

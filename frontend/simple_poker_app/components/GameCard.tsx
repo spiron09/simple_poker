@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { type Game } from "@/lib/types";
 import { useProgram, JoinGame, DetermineWinner, ClaimWinnings } from "@/lib/AnchorClient";
-import { useAtom, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
 import { toast } from "sonner";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -44,7 +44,7 @@ export function GameCard({ game }: GameCardProps) {
       )
     );
   }
-  const [games, setGames] = useAtom(gamesAtom);
+  const setGames = useSetAtom(gamesAtom);
   const setIsLoading = useSetAtom(gamesIsLoadingAtom);
   const setError = useSetAtom(gamesErrorAtom);
 

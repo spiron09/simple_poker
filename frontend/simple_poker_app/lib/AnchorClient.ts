@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/anchor-client.ts
 import * as anchor from "@coral-xyz/anchor";
 import {
@@ -8,7 +9,7 @@ import {
     PublicKey,
     Connection,
 } from "@solana/web3.js";
-import { type SimplePoker } from "./simple_poker";
+import { SimplePoker } from "./simple_poker";
 import idl from "./simple_poker.json";
 import { type Game } from "@/lib/types";
 const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || "https://api.devnet.solana.com", "confirmed");
@@ -114,7 +115,7 @@ export async function CreateGame(
 
     if (gameAccountInfo) {
         console.log("Game already initialized. Please Join the game or wait for it to complete");
-        return gameAccountData;
+        return mapOnChainDataToGame(gameAccountData);
     }
 
     try {
@@ -269,12 +270,6 @@ export async function ClaimWinnings(
 
     const provider = program.provider as anchor.AnchorProvider;
 
-    const [lobbyPDA] = PublicKey.findProgramAddressSync(
-        [anchor.utils.bytes.utf8.encode("game_lobby")],
-        program.programId,
-    );
-
-    const lobbyAccountData = await program.account.gameLobby.fetch(lobbyPDA);
 
     const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from("game"), gameId.toArrayLike(Buffer, "le", 8)],
@@ -355,13 +350,13 @@ export async function fetchAllGames(
 
     // const provider = program.provider as anchor.AnchorProvider;
 
-    const [lobbyPDA] = PublicKey.findProgramAddressSync(
-        [anchor.utils.bytes.utf8.encode("game_lobby")],
-        program.programId,
-    );
+    // const [lobbyPDA] = PublicKey.findProgramAddressSync(
+    //     [anchor.utils.bytes.utf8.encode("game_lobby")],
+    //     program.programId,
+    // );
 
-    const lobbyAccountData = await program.account.gameLobby.fetch(lobbyPDA);
-    const current_game_id = lobbyAccountData.currentGameId;
+    // const lobbyAccountData = await program.account.gameLobby.fetch(lobbyPDA);
+    // const current_game_id = lobbyAccountData.currentGameId;
 
 
     // const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
