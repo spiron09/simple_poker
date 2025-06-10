@@ -17,7 +17,7 @@ interface SolanaProviderProps {
 export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
     // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'
     const network = WalletAdapterNetwork.Devnet;
-    const endpoint = useMemo(() => "http://127.0.0.1:8899", [network]);
+    const endpoint = useMemo(() => process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || "https://api.devnet.solana.com", [network]);
 
     return (
         <ConnectionProvider endpoint={endpoint}>

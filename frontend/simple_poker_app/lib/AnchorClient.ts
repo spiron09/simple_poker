@@ -11,7 +11,7 @@ import {
 import { type SimplePoker } from "./simple_poker";
 import idl from "./simple_poker.json";
 import { type Game } from "@/lib/types";
-const connection = new Connection("http://127.0.0.1:8899", "confirmed");
+const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_HOST || "https://api.devnet.solana.com", "confirmed");
 
 export function useProgram() {
     const wallet = useAnchorWallet();
