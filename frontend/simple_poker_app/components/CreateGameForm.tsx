@@ -95,7 +95,7 @@ export function CreateGameForm() {
                 />
                 </div>
 
-                <div className="grid gap-2">
+                {/* <div className="grid gap-2">
                 <Label htmlFor="description">Description</Label>
                 <Input
                     id="description"
@@ -105,7 +105,7 @@ export function CreateGameForm() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                 />
-                </div>
+                </div> */}
             </div>
             </form>
         </CardContent>
