@@ -25,6 +25,7 @@ pub mod simple_poker {
         game.rolls = [0; MAX_PLAYERS as usize];
         game.winner = None;
         game.prize_pool = stake_amount*(max_players as u64);
+        game.is_claimed = false;
         Ok(())
     }
 
@@ -112,7 +113,7 @@ pub mod simple_poker {
     }
 
     pub fn claim_prize(ctx: Context<ClaimPrize>) -> Result<()> {
-        let game = &ctx.accounts.game_account;
+        let game = &mut ctx.accounts.game_account;
         let winner = &ctx.accounts.winner;
         let vault = &mut ctx.accounts.game_vault;
         // The constraints in the ClaimPrize context already handle authorization.
@@ -137,6 +138,7 @@ pub mod simple_poker {
         ).with_signer(signer_seeds);
 
         transfer(cpi_context, prize_pool)?;
+        game.is_claimed = true;
         msg!("Prize of {} lamports transferred to winner", prize_pool);
         ctx.accounts.lobby_account.current_game_id += 1;
         Ok(())
@@ -185,6 +187,7 @@ pub struct Game {
     pub players: [Pubkey; MAX_PLAYERS as usize],
     pub rolls: [u8; MAX_PLAYERS as usize],
     pub winner: Option<Pubkey>,
+    pub is_claimed: bool,
 }
 
 #[derive(Accounts)]

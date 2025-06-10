@@ -8,4 +8,5 @@ export type Game = {
     winner: string | "N/A";
     status: string;
     players: string[];
+    isClaimed: boolean;
 };

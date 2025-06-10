@@ -550,6 +550,10 @@ export type SimplePoker = {
             "type": {
               "option": "pubkey"
             }
+          },
+          {
+            "name": "isClaimed",
+            "type": "bool"
           }
         ]
       }

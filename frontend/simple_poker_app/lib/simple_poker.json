@@ -544,6 +544,10 @@
             "type": {
               "option": "pubkey"
             }
+          },
+          {
+            "name": "is_claimed",
+            "type": "bool"
           }
         ]
       }

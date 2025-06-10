@@ -314,9 +314,10 @@ describe("simple_poker", () => {
       program.programId,
     );
 
-    const gameAccount_data = await program.account.game.fetch(gamePDA);
+    let gameAccount_data = await program.account.game.fetch(gamePDA);
     const vaultBalance = await provider.connection.getBalance(vaultPDA);
 
+    console.log("Before Claim", gameAccount_data.isClaimed);
 
     console.log("Winner:", gameAccount_data.winner.toBase58());
     console.log("Vault amount:", Number(vaultBalance) / anchor.web3.LAMPORTS_PER_SOL);
@@ -342,7 +343,8 @@ describe("simple_poker", () => {
       .rpc();
 
     const afterBalance = await provider.connection.getBalance(winnerKey);
-
+    gameAccount_data = await program.account.game.fetch(gamePDA);
+    
     console.log("Balance before:", beforeBalance / anchor.web3.LAMPORTS_PER_SOL);
     console.log("Balance after:", afterBalance / anchor.web3.LAMPORTS_PER_SOL);
 
@@ -350,7 +352,11 @@ describe("simple_poker", () => {
       afterBalance > beforeBalance,
       "Winner should have received prize money"
     );
-
+    console.log("After Claim", gameAccount_data.isClaimed);
+    assert.ok(
+      gameAccount_data.isClaimed,
+      "Game should be marked as claimed"
+    )
     try {
       const vaultBalance = await provider.connection.getBalance(vaultPDA);
       console.log("Vault amount after claim:", Number(vaultBalance));

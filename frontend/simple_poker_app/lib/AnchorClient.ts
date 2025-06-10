@@ -340,7 +340,8 @@ const mapOnChainDataToGame = (account: any): Game => {
         prizePool: prizePool,
         status: Object.keys(account.state)[0],
         winner: account.winner?.toBase58() || "N/A",
-        players: players_string
+        players: players_string,
+        isClaimed: account.isClaimed,
     };
 };
 

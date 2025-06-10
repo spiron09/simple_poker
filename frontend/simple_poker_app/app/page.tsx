@@ -16,10 +16,10 @@ import {
 import {Button} from "@/components/ui/button";
 import {initLobby, isLobbyInitialized, useProgram} from "@/lib/AnchorClient";
 import { RecoilRoot } from "recoil";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { lobbyInitAtom, lobbyIsLoadingAtom } from "@/store/gameState";
 import { useAtom } from "jotai";
-
+import { toast } from "sonner";
 export default function Home() {
   const { connected } = useWallet();
   const program = useProgram();
@@ -33,8 +33,15 @@ export default function Home() {
           setLobbyLoading(true);
           const isInitialized = await isLobbyInitialized(program);
           setLobbyInitialized(isInitialized);
+
+          toast.info("Lobby status checked.", {
+          description: isInitialized
+            ? "Lobby is ready."
+            : "Lobby needs initialization.",
+        });
         } catch (error) {
           console.error("Error fetching lobby state:", error);
+          toast.error("Failed to fetch lobby state.");
         } finally {
           setLobbyLoading(false);
         }
@@ -46,14 +53,20 @@ export default function Home() {
   const handleInitLobby = async () => {
     if (!program) {
       console.error("Program not loaded");
+      toast.error("Cannot initialize lobby. Program not available.");
       return;
     }
+    const toastId = toast.loading("Initializing the lobby...");
     try {
       setLobbyLoading(true);
       const initialized = await initLobby(program);
+      toast.success("Lobby initialized successfully!", { id: toastId });
       setLobbyInitialized(initialized);
     } catch (error) {
       console.error("Error initializing lobby:", error);
+      toast.error("Failed to initialize lobby. Please try again.", {
+      id: toastId,
+    });
     } finally {
       setLobbyLoading(false);
     }

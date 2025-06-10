@@ -13,6 +13,7 @@ import { type Game } from "@/lib/types";
 import { useProgram, JoinGame, DetermineWinner, ClaimWinnings } from "@/lib/AnchorClient";
 import { useAtom, useSetAtom } from "jotai";
 import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
+import { toast } from "sonner";
 import { useWallet } from "@solana/wallet-adapter-react";
 interface GameCardProps {
   game: Game;
@@ -42,44 +43,62 @@ export function GameCard({ game }: GameCardProps) {
   const setError = useSetAtom(gamesErrorAtom);
 
   const handleJoinGame = async () => {
-    console.log(game.id)
     if (!program) {
-      console.error("Program not loaded");
-      setError("Program not loaded ");
+      toast.error("Program not loaded. Please connect your wallet.");
       return;
     }
+    const toastId = toast.loading("Submitting transaction to join game...");
     setIsLoading(true);
     setError(null);
     try {
-      const updatedGame = await JoinGame(program,new anchor.BN(game.id));
+      const updatedGame = await JoinGame(program, new anchor.BN(game.id));
       if (updatedGame) {
+        toast.success("Successfully joined the game!", { id: toastId });
         updateGameState(updatedGame);
       } else {
+        toast.error("Failed to join game.", { id: toastId });
         setError("Failed to join game");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Error joining game. Please try again.", { id: toastId });
       setError("Error joining game. See console.");
-    } finally{
+    } finally {
       setIsLoading(false);
     }
   };
   const handleRoll = async () => {
     if (!program) {
-      setError("Program not loaded ");
+      toast.error("Program not loaded. Please connect your wallet.");
       return;
     }
+    const toastId = toast.loading("Assigning Numbers to players...");
     setIsLoading(true);
     setError(null);
     try {
-      const updatedGame = await DetermineWinner(program,new anchor.BN(game.id));
+      const updatedGame = await DetermineWinner(program, new anchor.BN(game.id));
       if (updatedGame) {
+        if (program.provider.publicKey && program.provider.publicKey.toBase58() === updatedGame.winner) {
+          toast.info("Congratulations! You are the winner!", {
+            id: toastId,
+            description: `The winner is: ${updatedGame.winner}`,
+          });
+        } else {
+          toast.success("Winner determined!, Sorry better luck next time", {
+            id: toastId,
+            description: `The winner is: ${updatedGame.winner}`,
+          });
+        }
         updateGameState(updatedGame);
       } else {
+        toast.error("Failed to determine a winner.", { id: toastId });
         setError("Failed to determine winner.");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Error determining winner. Please try again.", {
+        id: toastId,
+      });
       setError("Error determining winner. See console.");
     } finally {
       setIsLoading(false);
@@ -87,20 +106,24 @@ export function GameCard({ game }: GameCardProps) {
   };
   const handleClaim = async () => {
     if (!program) {
-      setError("Program not loaded ");
+      toast.error("Program not loaded. Please connect your wallet.");
       return;
     }
+    const toastId = toast.loading("Submitting transaction to claim prize...");
     setIsLoading(true);
     setError(null);
     try {
-      const updatedGame = await ClaimWinnings(program,new anchor.BN(game.id));
+      const updatedGame = await ClaimWinnings(program, new anchor.BN(game.id));
       if (updatedGame) {
+        toast.success("Winnings claimed successfully!", { id: toastId });
         updateGameState(updatedGame);
       } else {
+        toast.error("Failed to claim prize.", { id: toastId });
         setError("Failed to claim prize.");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Error claiming prize. Please try again.", { id: toastId });
       setError("Error claiming prize. See console.");
     } finally {
       setIsLoading(false);
@@ -145,8 +168,12 @@ export function GameCard({ game }: GameCardProps) {
         )}
 
         {game.status === "closed" && isWinner && (
-          <Button className="w-full" onClick={handleClaim}>
-            Claim Prize
+          <Button
+            className="w-full"
+            onClick={handleClaim}
+            disabled={game.isClaimed}
+          >
+            {game.isClaimed ? "Claimed" : "Claim Prize"}
           </Button>
         )}
       </CardFooter>
