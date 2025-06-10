@@ -122,9 +122,6 @@ export default function Home() {
               <p className="mt-2 text-lg text-muted-foreground">
                 Connect your wallet to join or create a game.
               </p>
-              <div className="mt-6">
-                <WalletMultiButton />
-              </div>
             </div>
           )}
         </main>
