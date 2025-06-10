@@ -8,7 +8,7 @@ import {
     PublicKey,
     Connection,
 } from "@solana/web3.js";
-import { SimplePoker } from "./simple_poker";
+import { type SimplePoker } from "./simple_poker";
 import idl from "./simple_poker.json";
 import { type Game } from "@/lib/types";
 const connection = new Connection("http://127.0.0.1:8899", "confirmed");
@@ -131,6 +131,7 @@ export async function CreateGame(
 
 export async function JoinGame(
     program: anchor.Program<SimplePoker>,
+    gameId: anchor.BN,
 ): Promise<Game | null> {
     if (!program.provider) {
         throw new Error("Provider is not configured.");
@@ -146,13 +147,13 @@ export async function JoinGame(
     const lobbyAccountData = await program.account.gameLobby.fetch(lobbyPDA);
 
     const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("game"), new anchor.BN(lobbyAccountData.currentGameId).toArrayLike(Buffer, "le", 8)],
+        [Buffer.from("game"), gameId.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
     const gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
 
     const [vaultPDA] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("game_vault"), lobbyAccountData.currentGameId.toArrayLike(Buffer, "le", 8)],
+        [Buffer.from("game_vault"), gameId.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
 
@@ -189,6 +190,7 @@ export async function JoinGame(
 
 export async function DetermineWinner(
     program: anchor.Program<SimplePoker>,
+    gameId: anchor.BN,
 ): Promise<Game | null> {
     if (!program.provider) {
         throw new Error("Provider is not configured.");
@@ -203,14 +205,14 @@ export async function DetermineWinner(
     const lobbyAccountData = await program.account.gameLobby.fetch(lobbyPDA);
 
     const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("game"), new anchor.BN(lobbyAccountData.currentGameId).toArrayLike(Buffer, "le", 8)],
+        [Buffer.from("game"), new anchor.BN(gameId).toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
 
     const gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
 
     const [vaultPDA] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("game_vault"), lobbyAccountData.currentGameId.toArrayLike(Buffer, "le", 8)],
+        [Buffer.from("game_vault"), gameId.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
 
@@ -247,6 +249,7 @@ export async function DetermineWinner(
 
 export async function ClaimWinnings(
     program: anchor.Program<SimplePoker>,
+    gameId: anchor.BN,
 ): Promise<Game | null> {
     if (!program.provider) {
         throw new Error("Provider is not configured.");
@@ -262,7 +265,7 @@ export async function ClaimWinnings(
     const lobbyAccountData = await program.account.gameLobby.fetch(lobbyPDA);
 
     const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("game"), new anchor.BN(lobbyAccountData.currentGameId).toArrayLike(Buffer, "le", 8)],
+        [Buffer.from("game"), gameId.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
 
@@ -270,7 +273,7 @@ export async function ClaimWinnings(
     const gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
 
     const [vaultPDA] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from("game_vault"), lobbyAccountData.currentGameId.toArrayLike(Buffer, "le", 8)],
+        [Buffer.from("game_vault"), gameId.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
 
@@ -286,9 +289,7 @@ export async function ClaimWinnings(
         try {
             const tx_signature = await program.methods
                 .claimPrize()
-                .accounts({
-                    winner: provider.wallet.publicKey,
-                })
+                .accounts({winner: provider.wallet.publicKey})
                 .rpc();
             const gameAccountData = await program.account.game.fetch(gamePDA);
             console.log(
@@ -315,7 +316,10 @@ const mapOnChainDataToGame = (account: any): Game => {
     if (account.prizePool.toNumber() === 0) {
         prizePool = (account.stakeAmount.toNumber() * account.maxPlayers) / anchor.web3.LAMPORTS_PER_SOL;
     }
-
+    const players_string: string[] = [];
+    for (let i = 0; i < account.maxPlayers; i++) {
+        players_string.push(account.players[i].toBase58());
+    }
     return {
         id: account.id.toString(),
         description: `Game #${account.id.toString()}`,
@@ -323,7 +327,9 @@ const mapOnChainDataToGame = (account: any): Game => {
         maxPlayers: account.maxPlayers,
         currentPlayers: account.playerCount,
         prizePool: prizePool,
-        status: Object.keys(account.state)[0]
+        status: Object.keys(account.state)[0],
+        winner: account.winner?.toBase58() || "N/A",
+        players: players_string
     };
 };
 
@@ -356,7 +362,7 @@ export async function fetchAllGames(
     }
 
     console.log(gameAccountInfo[0])
-    console.log(`Game Account Info ${gameAccountInfo[0].account.id}`)
+    console.log(`Game Account Info ${gameAccountInfo[0]}`)
     return games;
 
 

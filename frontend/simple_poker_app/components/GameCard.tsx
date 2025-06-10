@@ -1,4 +1,5 @@
 "use client";
+import * as anchor from "@coral-xyz/anchor";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,11 +13,21 @@ import { type Game } from "@/lib/types";
 import { useProgram, JoinGame, DetermineWinner, ClaimWinnings } from "@/lib/AnchorClient";
 import { useAtom, useSetAtom, useAtomValue } from "jotai";
 import { gamesAtom, isLoadingAtom, errorAtom } from "@/store/gameState";
+import { useWallet } from "@solana/wallet-adapter-react";
 interface GameCardProps {
   game: Game;
 }
 
 export function GameCard({ game }: GameCardProps) {
+  const { publicKey } = useWallet();
+  const userAddress = publicKey?.toBase58();
+
+  const isUserInGame =
+    userAddress && game.players.includes(userAddress);
+  const isWinner = userAddress && game.winner === userAddress;
+  const isGameFull = game.currentPlayers >= game.maxPlayers;
+
+
   const program = useProgram();
 
   const updateGameState = (updatedGame: Game) => {
@@ -40,7 +51,7 @@ export function GameCard({ game }: GameCardProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedGame = await JoinGame(program);
+      const updatedGame = await JoinGame(program,new anchor.BN(game.id));
       if (updatedGame) {
         updateGameState(updatedGame);
       } else {
@@ -61,7 +72,7 @@ export function GameCard({ game }: GameCardProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedGame = await DetermineWinner(program);
+      const updatedGame = await DetermineWinner(program,new anchor.BN(game.id));
       if (updatedGame) {
         updateGameState(updatedGame);
       } else {
@@ -82,7 +93,7 @@ export function GameCard({ game }: GameCardProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedGame = await ClaimWinnings(program);
+      const updatedGame = await ClaimWinnings(program,new anchor.BN(game.id));
       if (updatedGame) {
         updateGameState(updatedGame);
       } else {
@@ -107,6 +118,8 @@ export function GameCard({ game }: GameCardProps) {
           Prize Pool: {game.prizePool.toFixed(2)} SOL
           <br />
           Status: {game.status}
+          <br />
+          Winner: {game.winner}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -114,16 +127,28 @@ export function GameCard({ game }: GameCardProps) {
           Players: {game.currentPlayers} / {game.maxPlayers}
         </p>
       </CardContent>
-      <CardFooter className="flex-col gap-2">
-        <Button className="w-full" onClick={handleJoinGame}>
-          Join Game
-        </Button>
-        <Button className="w-full" onClick={handleRoll}>
-          Roll
-        </Button>
-        <Button className="w-full" onClick={handleClaim}>
-          Claim
-        </Button>
+      <CardFooter className="min-h-[56px]">
+        {game.status === "open" && !isUserInGame && (
+          <Button
+            className="w-full"
+            onClick={handleJoinGame}
+            disabled={isGameFull}
+          >
+            {isGameFull ? "Game Full" : "Join Game"}
+          </Button>
+        )}
+
+        {game.status === "inProgress" && isUserInGame && (
+          <Button className="w-full" onClick={handleRoll}>
+            Roll for Winner
+          </Button>
+        )}
+
+        {game.status === "closed" && isWinner && (
+          <Button className="w-full" onClick={handleClaim}>
+            Claim Prize
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

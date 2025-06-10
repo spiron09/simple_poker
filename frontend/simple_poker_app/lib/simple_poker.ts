@@ -101,8 +101,7 @@ export type SimplePoker = {
         },
         {
           "name": "winner",
-          "writable": true,
-          "signer": true
+          "writable": true
         },
         {
           "name": "systemProgram",
@@ -483,6 +482,11 @@ export type SimplePoker = {
       "code": 6004,
       "name": "winnerNotDetermined",
       "msg": "A winner has not been determined for this game yet."
+    },
+    {
+      "code": 6005,
+      "name": "alreadyInGame",
+      "msg": "User has joined the game already"
     }
   ],
   "types": [
