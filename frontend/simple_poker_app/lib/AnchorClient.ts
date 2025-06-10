@@ -109,23 +109,16 @@ export async function CreateGame(
         [Buffer.from("game"), current_game_id.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
-    let gameAccountData, gameAccountInfo;
+    let gameAccountInfo;
 
-    if(Number(lobbyAccountData.currentGameId) !== 0){
-        // gameAccountData = await program.account.game.fetch(gamePDA);
+    console.log("Current Game ID:", Number(current_game_id));
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
 
-        if (!gameAccountInfo) {
-            const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
-                [Buffer.from("game"), new anchor.BN(Number(current_game_id) - 1).toArrayLike(Buffer, "le", 8)], 
-                program.programId,
-            );
-            gameAccountData = await program.account.game.fetch(gamePDA);
-
-            console.log("A Game already initialized. Please Join the game or wait for it to complete");
-            return Number(gameAccountData.id);
-        }
-
+    } catch(error) {
+        console.log("A Game already initialized. Please Join the game or wait for it to complete", error);
+        return (Number(current_game_id)-1);
     }
     try {
         const tx_signature = await program.methods
