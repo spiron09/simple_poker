@@ -53,7 +53,7 @@ export function CreateGameForm() {
             const stakeInLamports = new anchor.BN(stakeAmount * anchor.web3.LAMPORTS_PER_SOL);
             const newGame = await CreateGame(program, stakeInLamports, maxPlayers);
 
-            if(newGame){
+            if(newGame.status === "open"){
                 toast.success("Game created successfully!", {
                 id: toastId,
                 description: `Game ID: ${newGame.id.toString()}`, // Example description
@@ -61,9 +61,10 @@ export function CreateGameForm() {
                 setGames((CurrentGames) => [...CurrentGames, newGame]);
                 setStakeAmount(0.1);
                 setMaxPlayers(4);
-            } else {
-                toast.error("Transaction succeeded, but failed to create game.", {
+            } else if(newGame.status !== "closed") {
+                toast.error("Wait for existing game to complete before creating a new one.", {
                     id: toastId,
+                    description: `Game ID: ${newGame.id.toString()}`
                 });
                 setGamesError("Game could not be created.");
             }

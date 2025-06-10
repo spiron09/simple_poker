@@ -90,7 +90,7 @@ export async function CreateGame(
     program: anchor.Program<SimplePoker>,
     stakeAmount: anchor.BN,
     maxPlayers: number,
-): Promise<Game | null> {
+): Promise<Game> {
     if (!program.provider) {
         throw new Error("Provider is not configured.");
     }
@@ -108,12 +108,13 @@ export async function CreateGame(
         [Buffer.from("game"), current_game_id.toArrayLike(Buffer, "le", 8)],
         program.programId,
     );
-
+    
+    const gameAccountData = await program.account.game.fetch(gamePDA);
     const gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
 
     if (gameAccountInfo) {
         console.log("Game already initialized. Please Join the game or wait for it to complete");
-        return null;
+        return gameAccountData;
     }
 
     try {

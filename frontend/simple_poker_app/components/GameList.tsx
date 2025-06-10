@@ -6,15 +6,16 @@ import { GameCard } from "@/components/GameCard";
 import { useProgram } from "@/lib/AnchorClient";
 import { useEffect } from "react";
 import { fetchAllGames } from "@/lib/AnchorClient";
-
+import { Game } from "@/lib/types";
 export function GameList() {
 
   const [games, setGames] = useAtom(gamesAtom);
   const [isLoading, setIsLoading] = useAtom(gamesIsLoadingAtom);
-  const [error, setError] = useAtom(gamesErrorAtom);
+  const [gamesError, setError] = useAtom(gamesErrorAtom);
 
   
   const program = useProgram();
+  
   useEffect(() => {
     const loadGames = async () => {
       if (!program){
@@ -42,9 +43,13 @@ export function GameList() {
     loadGames();
   }, [program]);
 
+  const sortedGames = [...games].sort((a: Game, b: Game) => {
+    return a.id - b.id;
+  });
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {games.map((game) => (
+      {sortedGames.map((game) => (
         <GameCard key={game.id} game={game} />
       ))}
     </div>

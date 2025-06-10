@@ -15,9 +15,15 @@ import { useAtom, useSetAtom } from "jotai";
 import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
 import { toast } from "sonner";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { Badge } from "@/components/ui/badge";
 interface GameCardProps {
   game: Game;
 }
+
+const truncateAddress = (address: string) => {
+  if (address == "N/A") return "N/A";
+  return `${address.slice(0, 5)}...${address.slice(-5)}`;
+};
 
 export function GameCard({ game }: GameCardProps) {
   const { publicKey } = useWallet();
@@ -129,35 +135,58 @@ export function GameCard({ game }: GameCardProps) {
       setIsLoading(false);
     }
   };
+
+  const statusVariantMap: {
+    [key: string]: "default" | "secondary" | "destructive" | "outline";
+  } = {
+    open: "default",
+    inProgress: "secondary",
+    closed: "outline",
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{game.description}</CardTitle>
-        <CardDescription>
-          Game Id: {game.id}
-          <br />
-          Stake Amount: {game.stakingAmount.toFixed(2)} SOL
-          <br />
-          Prize Pool: {game.prizePool.toFixed(2)} SOL
-          <br />
-          Status: {game.status}
-          <br />
-          Winner: {game.winner}
-        </CardDescription>
+      <CardHeader className="flex-row items-start justify-between gap-4">
+        <div>
+          <CardTitle>Game #{game.id.toString()}</CardTitle>
+          <CardDescription className="mt-2">
+            Prize Pool: {game.prizePool.toFixed(2)} SOL
+          </CardDescription>
+        </div>
+        <Badge variant={statusVariantMap[game.status] || "outline"}>
+          {game.status}
+        </Badge>
       </CardHeader>
       <CardContent>
-        <p>
-          Players: {game.currentPlayers} / {game.maxPlayers}
-        </p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <p className="text-muted-foreground">Stake</p>
+          <p className="text-right font-medium">
+            {game.stakingAmount.toFixed(2)} SOL
+          </p>
+
+          <p className="text-muted-foreground">Players</p>
+          <p className="text-right font-medium">
+            {game.currentPlayers} / {game.maxPlayers}
+          </p>
+
+          {game.winner && (
+            <>
+              <p className="text-muted-foreground">Winner</p>
+              <p className="truncate text-right font-medium" title={game.winner}>
+                {truncateAddress(game.winner)}
+              </p>
+            </>
+          )}
+        </div>
       </CardContent>
-      <CardFooter className="min-h-[56px]">
-        {game.status === "open" && !isUserInGame && (
+      <CardFooter className="min-h-[56px] pt-4">
+        {game.status === "open" && (
           <Button
             className="w-full"
             onClick={handleJoinGame}
-            disabled={isGameFull}
+            disabled={!!isGameFull || !!isUserInGame}
           >
-            {isGameFull ? "Game Full" : "Join Game"}
+            {isGameFull ? "Game Full" : isUserInGame ? "Joined" : "Join Game"}
           </Button>
         )}
 
@@ -167,13 +196,13 @@ export function GameCard({ game }: GameCardProps) {
           </Button>
         )}
 
-        {game.status === "closed" && isWinner && (
+        {game.status === "closed" &&(
           <Button
             className="w-full"
             onClick={handleClaim}
-            disabled={game.isClaimed}
+            disabled={game.isClaimed || !isWinner}
           >
-            {game.isClaimed ? "Claimed" : "Claim Prize"}
+            {isWinner ? game.isClaimed ? "Claimed" : "Claim Prize" : "Better Luck Next Time"}
           </Button>
         )}
       </CardFooter>

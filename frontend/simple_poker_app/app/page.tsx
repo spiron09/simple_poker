@@ -13,9 +13,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import {Button} from "@/components/ui/button";
+
+import { Badge } from "@/components/ui/badge";
 import {initLobby, isLobbyInitialized, useProgram} from "@/lib/AnchorClient";
-import { RecoilRoot } from "recoil";
 import { useEffect } from "react";
 import { lobbyInitAtom, lobbyIsLoadingAtom } from "@/store/gameState";
 import { useAtom } from "jotai";
@@ -72,23 +72,25 @@ export default function Home() {
     }
   };
   return (
-    <RecoilRoot>
-      <div className="flex min-h-screen flex-col bg-gray-900 text-white">
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
         <header className="container mx-auto flex items-center justify-between p-4">
           <h1 className="text-2xl font-bold">Simple Poker</h1>
           <div className="flex items-center gap-x-4">
-            {connected && program &&  (
-              <Button
-              onClick={handleInitLobby}
-              disabled={lobbyInitialized || lobbyLoading}
-            >
-              {lobbyLoading
-                ? "Loading..."
-                : lobbyInitialized
-                ? "Lobby Ready"
-                : "Initialize Lobby"}
-            </Button>
-            )}
+            {connected &&
+              program &&
+              (lobbyLoading ? (
+                <Badge variant="secondary">Checking Lobby...</Badge>
+              ) : lobbyInitialized ? (
+                <Badge variant="secondary">Lobby Ready</Badge>
+              ) : (
+                <button
+                  onClick={handleInitLobby}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Initialize Lobby
+                </button>
+              ))}
+
             <WalletMultiButton />
           </div>
         </header>
@@ -97,7 +99,7 @@ export default function Home() {
           {connected ? (
             program ? (
               <Tabs defaultValue="join-game" className="w-full max-w-4xl">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-2 bg-card">
                   <TabsTrigger value="join-game">Join Game</TabsTrigger>
                   <TabsTrigger value="create-game">Create Game</TabsTrigger>
                 </TabsList>
@@ -114,15 +116,18 @@ export default function Home() {
               <div>Initializing Program...</div>
             )
           ) : (
+
             <div className="text-center">
               <h2 className="text-3xl font-bold">Welcome to Simple Poker</h2>
-              <p className="mt-2 text-lg text-gray-400">
+              <p className="mt-2 text-lg text-muted-foreground">
                 Connect your wallet to join or create a game.
               </p>
+              <div className="mt-6">
+                <WalletMultiButton />
+              </div>
             </div>
           )}
         </main>
       </div>
-    </RecoilRoot>
   );
 }
