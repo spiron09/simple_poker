@@ -91,7 +91,7 @@ export async function CreateGame(
     program: anchor.Program<SimplePoker>,
     stakeAmount: anchor.BN,
     maxPlayers: number,
-): Promise<Game> {
+): Promise<Game | number> {
     if (!program.provider) {
         throw new Error("Provider is not configured.");
     }
@@ -112,12 +112,18 @@ export async function CreateGame(
     let gameAccountData, gameAccountInfo;
 
     if(Number(lobbyAccountData.currentGameId) !== 0){
-        gameAccountData = await program.account.game.fetch(gamePDA);
+        // gameAccountData = await program.account.game.fetch(gamePDA);
         gameAccountInfo = await program.account.game.getAccountInfo(gamePDA);
 
-        if (gameAccountInfo) {
-            console.log("Game already initialized. Please Join the game or wait for it to complete");
-            return mapOnChainDataToGame(gameAccountData);
+        if (!gameAccountInfo) {
+            const [gamePDA] = anchor.web3.PublicKey.findProgramAddressSync(
+                [Buffer.from("game"), new anchor.BN(Number(current_game_id) - 1).toArrayLike(Buffer, "le", 8)], 
+                program.programId,
+            );
+            gameAccountData = await program.account.game.fetch(gamePDA);
+
+            console.log("A Game already initialized. Please Join the game or wait for it to complete");
+            return Number(gameAccountData.id);
         }
 
     }

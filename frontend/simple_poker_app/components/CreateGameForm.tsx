@@ -17,7 +17,6 @@ import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState
 import { useSetAtom } from "jotai";
 import { useProgram, CreateGame} from "@/lib/AnchorClient";
 import { toast } from "sonner"
-
 export function CreateGameForm() {
     const [stakeAmount, setStakeAmount] = useState(0.1);
     const [maxPlayers, setMaxPlayers] = useState(2);
@@ -52,8 +51,8 @@ export function CreateGameForm() {
         try {
             const stakeInLamports = new anchor.BN(stakeAmount * anchor.web3.LAMPORTS_PER_SOL);
             const newGame = await CreateGame(program, stakeInLamports, maxPlayers);
-
-            if(newGame.status === "open"){
+            
+            if(typeof newGame === "object"){
                 toast.success("Game created successfully!", {
                 id: toastId,
                 description: `Game ID: ${newGame.id.toString()}`, // Example description
@@ -61,10 +60,10 @@ export function CreateGameForm() {
                 setGames((CurrentGames) => [...CurrentGames, newGame]);
                 setStakeAmount(0.1);
                 setMaxPlayers(4);
-            } else if(newGame.status !== "closed") {
+            } else if(typeof newGame === "number") {
                 toast.error("Wait for existing game to complete before creating a new one.", {
                     id: toastId,
-                    description: `Game ID: ${newGame.id.toString()}`
+                    description: `Game ID: ${newGame.toString()}`
                 });
                 setGamesError("Game could not be created.");
             }
