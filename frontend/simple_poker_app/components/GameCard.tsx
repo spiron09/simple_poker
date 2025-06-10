@@ -12,7 +12,7 @@ import {
 import { type Game } from "@/lib/types";
 import { useProgram, JoinGame, DetermineWinner, ClaimWinnings } from "@/lib/AnchorClient";
 import { useAtom, useSetAtom, useAtomValue } from "jotai";
-import { gamesAtom, isLoadingAtom, errorAtom } from "@/store/gameState";
+import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
 import { useWallet } from "@solana/wallet-adapter-react";
 interface GameCardProps {
   game: Game;
@@ -38,8 +38,8 @@ export function GameCard({ game }: GameCardProps) {
     );
   }
   const [games, setGames] = useAtom(gamesAtom);
-  const setIsLoading = useSetAtom(isLoadingAtom);
-  const setError = useSetAtom(errorAtom);
+  const setIsLoading = useSetAtom(gamesIsLoadingAtom);
+  const setError = useSetAtom(gamesErrorAtom);
 
   const handleJoinGame = async () => {
     console.log(game.id)

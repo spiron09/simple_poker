@@ -14,22 +14,67 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import {Button} from "@/components/ui/button";
-import {initLobby, useProgram} from "@/lib/AnchorClient";
+import {initLobby, isLobbyInitialized, useProgram} from "@/lib/AnchorClient";
 import { RecoilRoot } from "recoil";
+import { useEffect, useState } from "react";
+import { lobbyInitAtom, lobbyIsLoadingAtom } from "@/store/gameState";
+import { useAtom } from "jotai";
 
 export default function Home() {
   const { connected } = useWallet();
   const program = useProgram();
+  const [lobbyInitialized, setLobbyInitialized] = useAtom(lobbyInitAtom);
+  const [lobbyLoading, setLobbyLoading] = useAtom(lobbyIsLoadingAtom);
+
+  useEffect(() => {
+    const fetchLobbyState = async () => {
+      if (program) {
+        try {
+          setLobbyLoading(true);
+          const isInitialized = await isLobbyInitialized(program);
+          setLobbyInitialized(isInitialized);
+        } catch (error) {
+          console.error("Error fetching lobby state:", error);
+        } finally {
+          setLobbyLoading(false);
+        }
+      }
+    };
+    fetchLobbyState();
+  }, [program, setLobbyInitialized, setLobbyLoading]);
+  
+  const handleInitLobby = async () => {
+    if (!program) {
+      console.error("Program not loaded");
+      return;
+    }
+    try {
+      setLobbyLoading(true);
+      const initialized = await initLobby(program);
+      setLobbyInitialized(initialized);
+    } catch (error) {
+      console.error("Error initializing lobby:", error);
+    } finally {
+      setLobbyLoading(false);
+    }
+  };
   return (
     <RecoilRoot>
       <div className="flex min-h-screen flex-col bg-gray-900 text-white">
         <header className="container mx-auto flex items-center justify-between p-4">
           <h1 className="text-2xl font-bold">Simple Poker</h1>
           <div className="flex items-center gap-x-4">
-            {connected && program && (
-              <Button onClick={() => initLobby(program)}>
-                Initialize Lobby
-              </Button>
+            {connected && program &&  (
+              <Button
+              onClick={handleInitLobby}
+              disabled={lobbyInitialized || lobbyLoading}
+            >
+              {lobbyLoading
+                ? "Loading..."
+                : lobbyInitialized
+                ? "Lobby Ready"
+                : "Initialize Lobby"}
+            </Button>
             )}
             <WalletMultiButton />
           </div>

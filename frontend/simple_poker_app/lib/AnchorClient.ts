@@ -31,7 +31,7 @@ export function useProgram() {
 
 export async function initLobby(
     program: anchor.Program<SimplePoker>,
-) {
+): Promise<boolean> {
     if (!program.provider) {
         throw new Error("Provider is not configured.");
     }
@@ -46,7 +46,7 @@ export async function initLobby(
 
     if (lobbyAccountInfo) {
         console.log("Game lobby already initialized. Skipping creation.");
-        return;
+        return true;
     }
     console.log("Lobby account not found. Initializing game lobby...")
     try {
@@ -60,17 +60,36 @@ export async function initLobby(
             "Game lobby initialized successfully!",
             `Tx: ${tx_signature}`
         );
+        return true;
     } catch (error) {
         console.error("Failed to initialize game lobby:", error);
-        throw error;
+        return false;
     }
+}
+
+export async function isLobbyInitialized(program: anchor.Program<SimplePoker>): Promise<boolean> {
+
+    if (!program) {
+        throw new Error("Program is not configured.");
+    }
+
+    const [lobbyPDA] = PublicKey.findProgramAddressSync(
+        [anchor.utils.bytes.utf8.encode("game_lobby")],
+        program.programId,
+    );
+
+    const lobbyAccountInfo = await program.account.gameLobby.getAccountInfo(lobbyPDA);
+
+    if (lobbyAccountInfo) {
+        return true;
+    }
+    return false;
 }
 
 export async function CreateGame(
     program: anchor.Program<SimplePoker>,
     stakeAmount: anchor.BN,
     maxPlayers: number,
-    description: string,
 ): Promise<Game | null> {
     if (!program.provider) {
         throw new Error("Provider is not configured.");
@@ -111,15 +130,7 @@ export async function CreateGame(
             `Tx: ${tx_signature}`
         );
 
-        const createdGame: Game = {
-            id: gameAccountData.id.toString(),
-            description: description,
-            stakingAmount: Number(stakeAmount) / anchor.web3.LAMPORTS_PER_SOL,
-            maxPlayers: maxPlayers,
-            currentPlayers: gameAccountData.playerCount,
-            prizePool: (Number(gameAccountData.prizePool) / anchor.web3.LAMPORTS_PER_SOL),
-            status: gameAccountData.state.toString(),
-        }
+        const createdGame: Game = mapOnChainDataToGame(gameAccountData);
 
         return createdGame;
 

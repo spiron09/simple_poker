@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { gamesAtom, errorAtom, isLoadingAtom } from "@/store/gameState";
+import { gamesAtom, gamesErrorAtom, gamesIsLoadingAtom } from "@/store/gameState";
 import { GameCard } from "@/components/GameCard";
 import { useProgram } from "@/lib/AnchorClient";
 import { useEffect } from "react";
@@ -10,8 +10,8 @@ import { fetchAllGames } from "@/lib/AnchorClient";
 export function GameList() {
 
   const [games, setGames] = useAtom(gamesAtom);
-  const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
-  const [error, setError] = useAtom(errorAtom);
+  const [isLoading, setIsLoading] = useAtom(gamesIsLoadingAtom);
+  const [error, setError] = useAtom(gamesErrorAtom);
 
   
   const program = useProgram();

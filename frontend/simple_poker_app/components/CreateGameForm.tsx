@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { gamesAtom, isLoadingAtom, errorAtom } from "@/store/gameState";
+import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useProgram, CreateGame} from "@/lib/AnchorClient";
 
@@ -22,10 +22,10 @@ export function CreateGameForm() {
     const [maxPlayers, setMaxPlayers] = useState(2);
     const [description, setDescription] = useState("");
 
-    // const isLoading = useAtomValue(isLoadingAtom);
+    // const isLoading = useAtomValue(gamesIsLoadingAtom);
     const setGames = useSetAtom(gamesAtom);
-    const setIsLoading = useSetAtom(isLoadingAtom);
-    const setError = useSetAtom(errorAtom);
+    const setIsLoading = useSetAtom(gamesIsLoadingAtom);
+    const setError = useSetAtom(gamesErrorAtom);
 
     const program = useProgram();
 
