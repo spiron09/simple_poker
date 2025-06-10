@@ -81,7 +81,3 @@ If you didn't win, the button will show a "Better Luck Next Time" message.
 - **Framework:** [Anchor](https://www.anchor-lang.com/)
 - **Language:** [Rust](https://www.rust-lang.org/)
 - **Blockchain:** [Solana](https://solana.com/)
-
-## 📄 License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

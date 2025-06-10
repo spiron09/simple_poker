@@ -20,6 +20,9 @@ import { useEffect } from "react";
 import { lobbyInitAtom, lobbyIsLoadingAtom } from "@/store/gameState";
 import { useAtom } from "jotai";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Github } from "lucide-react";
+
 export default function Home() {
   const { connected } = useWallet();
   const program = useProgram();
@@ -76,6 +79,16 @@ export default function Home() {
         <header className="container mx-auto flex items-center justify-between p-4">
           <h1 className="text-2xl font-bold">Simple Poker</h1>
           <div className="flex items-center gap-x-4">
+            <Button variant="ghost" size="icon" asChild>
+                <a
+                  href="https://github.com/spiron09/simple_poker"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="View source code on GitHub"
+                >
+                <Github className="h-5 w-5" />
+            </a>
+          </Button>
             {connected &&
               program &&
               (lobbyLoading ? (
@@ -83,14 +96,14 @@ export default function Home() {
               ) : lobbyInitialized ? (
                 <Badge variant="secondary">Lobby Ready</Badge>
               ) : (
-                <button
+                <Button
                   onClick={handleInitLobby}
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm text-primary"
+                  variant="secondary"
                 >
                   Initialize Lobby
-                </button>
+                </Button>
               ))}
-
             <WalletMultiButton />
           </div>
         </header>
