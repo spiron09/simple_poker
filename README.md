@@ -58,7 +58,7 @@ If you didn't win, the button will show a "Better Luck Next Time" message.
 - **Wallet Integration:** Connects with popular Solana wallets like Phantom and Solflare via the Wallet Adapter.
 - **On-Chain Game Logic:** All game states (lobby, games, players, winners) are managed by an Anchor smart contract on the Solana blockchain.
 - **Create & Join Games:** Users can create new games with a custom stake amount and player limit, or join existing open games.
-- **Winner Determination:** A simple "roll" mechanism determines the winner once a game is full.
+- **Winner Determination:** A transparent and deterministic "roll" is calculated for each player using the blockchain's slot and the player's public key as a seed. The highest roll wins.
 - **Claim Winnings:** Winners can securely claim the prize pool from the game contract.
 - **Real-time State Management:** Uses [Jotai](https://jotai.org/) for efficient, global state management, ensuring the UI is always in sync.
 - **Modern UI:** Built with [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), and beautifully crafted components from [shadcn/ui](https://ui.shadcn.com/).
