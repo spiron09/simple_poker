@@ -1,6 +1,6 @@
-"use client";
-import * as anchor from "@coral-xyz/anchor";
-import { Button } from "@/components/ui/button";
+'use client'
+import * as anchor from '@coral-xyz/anchor'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,141 +8,149 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { type Game } from "@/lib/types";
-import { useProgram, JoinGame, DetermineWinner, ClaimWinnings } from "@/lib/AnchorClient";
-import { useSetAtom } from "jotai";
-import { gamesAtom, gamesIsLoadingAtom, gamesErrorAtom } from "@/store/gameState";
-import { toast } from "sonner";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/card'
+import { type Game } from '@/lib/types'
+import {
+  useProgram,
+  JoinGame,
+  DetermineWinner,
+  ClaimWinnings,
+} from '@/lib/AnchorClient'
+import { useSetAtom } from 'jotai'
+import {
+  gamesAtom,
+  gamesIsLoadingAtom,
+  gamesErrorAtom,
+} from '@/store/gameState'
+import { toast } from 'sonner'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { Badge } from '@/components/ui/badge'
 interface GameCardProps {
-  game: Game;
+  game: Game
 }
 
 const truncateAddress = (address: string) => {
-  if (address == "N/A") return "N/A";
-  return `${address.slice(0, 5)}...${address.slice(-5)}`;
-};
+  if (address == 'N/A') return 'N/A'
+  return `${address.slice(0, 5)}...${address.slice(-5)}`
+}
 
 export function GameCard({ game }: GameCardProps) {
-  const { publicKey } = useWallet();
-  const userAddress = publicKey?.toBase58();
+  const { publicKey } = useWallet()
+  const userAddress = publicKey?.toBase58()
 
-  const isUserInGame =
-    userAddress && game.players.includes(userAddress);
-  const isWinner = userAddress && game.winner === userAddress;
-  const isGameFull = game.currentPlayers >= game.maxPlayers;
+  const isUserInGame = userAddress && game.players.includes(userAddress)
+  const isWinner = userAddress && game.winner === userAddress
+  const isGameFull = game.currentPlayers >= game.maxPlayers
 
-
-  const program = useProgram();
+  const program = useProgram()
 
   const updateGameState = (updatedGame: Game) => {
     setGames((currentGames) =>
-      currentGames.map((g) =>
-        g.id === updatedGame.id ? updatedGame : g
-      )
-    );
+      currentGames.map((g) => (g.id === updatedGame.id ? updatedGame : g))
+    )
   }
-  const setGames = useSetAtom(gamesAtom);
-  const setIsLoading = useSetAtom(gamesIsLoadingAtom);
-  const setError = useSetAtom(gamesErrorAtom);
+  const setGames = useSetAtom(gamesAtom)
+  const setIsLoading = useSetAtom(gamesIsLoadingAtom)
+  const setError = useSetAtom(gamesErrorAtom)
 
   const handleJoinGame = async () => {
     if (!program) {
-      toast.error("Program not loaded. Please connect your wallet.");
-      return;
+      toast.error('Program not loaded. Please connect your wallet.')
+      return
     }
-    const toastId = toast.loading("Submitting transaction to join game...");
-    setIsLoading(true);
-    setError(null);
+    const toastId = toast.loading('Submitting transaction to join game...')
+    setIsLoading(true)
+    setError(null)
     try {
-      const updatedGame = await JoinGame(program, new anchor.BN(game.id));
+      const updatedGame = await JoinGame(program, new anchor.BN(game.id))
       if (updatedGame) {
-        toast.success("Successfully joined the game!", { id: toastId });
-        updateGameState(updatedGame);
+        toast.success('Successfully joined the game!', { id: toastId })
+        updateGameState(updatedGame)
       } else {
-        toast.error("Failed to join game.", { id: toastId });
-        setError("Failed to join game");
+        toast.error('Failed to join game.', { id: toastId })
+        setError('Failed to join game')
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Error joining game. Please try again.", { id: toastId });
-      setError("Error joining game. See console.");
+      console.error(err)
+      toast.error('Error joining game. Please try again.', { id: toastId })
+      setError('Error joining game. See console.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
   const handleRoll = async () => {
     if (!program) {
-      toast.error("Program not loaded. Please connect your wallet.");
-      return;
+      toast.error('Program not loaded. Please connect your wallet.')
+      return
     }
-    const toastId = toast.loading("Assigning Numbers to players...");
-    setIsLoading(true);
-    setError(null);
+    const toastId = toast.loading('Assigning Numbers to players...')
+    setIsLoading(true)
+    setError(null)
     try {
-      const updatedGame = await DetermineWinner(program, new anchor.BN(game.id));
+      const updatedGame = await DetermineWinner(program, new anchor.BN(game.id))
       if (updatedGame) {
-        if (program.provider.publicKey && program.provider.publicKey.toBase58() === updatedGame.winner) {
-          toast.info("Congratulations! You are the winner!", {
+        if (
+          program.provider.publicKey &&
+          program.provider.publicKey.toBase58() === updatedGame.winner
+        ) {
+          toast.info('Congratulations! You are the winner!', {
             id: toastId,
             description: `The winner is: ${updatedGame.winner}`,
-          });
+          })
         } else {
-          toast.success("Winner determined!, Sorry better luck next time", {
+          toast.success('Winner determined!, Sorry better luck next time', {
             id: toastId,
             description: `The winner is: ${updatedGame.winner}`,
-          });
+          })
         }
-        updateGameState(updatedGame);
+        updateGameState(updatedGame)
       } else {
-        toast.error("Failed to determine a winner.", { id: toastId });
-        setError("Failed to determine winner.");
+        toast.error('Failed to determine a winner.', { id: toastId })
+        setError('Failed to determine winner.')
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Error determining winner. Please try again.", {
+      console.error(err)
+      toast.error('Error determining winner. Please try again.', {
         id: toastId,
-      });
-      setError("Error determining winner. See console.");
+      })
+      setError('Error determining winner. See console.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
   const handleClaim = async () => {
     if (!program) {
-      toast.error("Program not loaded. Please connect your wallet.");
-      return;
+      toast.error('Program not loaded. Please connect your wallet.')
+      return
     }
-    const toastId = toast.loading("Submitting transaction to claim prize...");
-    setIsLoading(true);
-    setError(null);
+    const toastId = toast.loading('Submitting transaction to claim prize...')
+    setIsLoading(true)
+    setError(null)
     try {
-      const updatedGame = await ClaimWinnings(program, new anchor.BN(game.id));
+      const updatedGame = await ClaimWinnings(program, new anchor.BN(game.id))
       if (updatedGame) {
-        toast.success("Winnings claimed successfully!", { id: toastId });
-        updateGameState(updatedGame);
+        toast.success('Winnings claimed successfully!', { id: toastId })
+        updateGameState(updatedGame)
       } else {
-        toast.error("Failed to claim prize.", { id: toastId });
-        setError("Failed to claim prize.");
+        toast.error('Failed to claim prize.', { id: toastId })
+        setError('Failed to claim prize.')
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Error claiming prize. Please try again.", { id: toastId });
-      setError("Error claiming prize. See console.");
+      console.error(err)
+      toast.error('Error claiming prize. Please try again.', { id: toastId })
+      setError('Error claiming prize. See console.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const statusVariantMap: {
-    [key: string]: "default" | "secondary" | "destructive" | "outline";
+    [key: string]: 'default' | 'secondary' | 'destructive' | 'outline'
   } = {
-    open: "default",
-    inProgress: "secondary",
-    closed: "outline",
-  };
+    open: 'default',
+    inProgress: 'secondary',
+    closed: 'outline',
+  }
 
   return (
     <Card>
@@ -150,10 +158,10 @@ export function GameCard({ game }: GameCardProps) {
         <div>
           <CardTitle>Game {game.id.toString()}</CardTitle>
           <CardDescription className="mt-2">
-            Prize Pool: {game.prizePool.toFixed(2)} SOL
+            Prize Pool: <b>{game.prizePool.toFixed(2)} SOL</b>
           </CardDescription>
         </div>
-        <Badge variant={statusVariantMap[game.status] || "outline"}>
+        <Badge variant={statusVariantMap[game.status] || 'outline'}>
           {game.status}
         </Badge>
       </CardHeader>
@@ -172,7 +180,10 @@ export function GameCard({ game }: GameCardProps) {
           {game.winner && (
             <>
               <p className="text-muted-foreground">Winner</p>
-              <p className="truncate text-right font-medium" title={game.winner}>
+              <p
+                className="truncate text-right font-medium"
+                title={game.winner}
+              >
                 {truncateAddress(game.winner)}
               </p>
             </>
@@ -180,32 +191,36 @@ export function GameCard({ game }: GameCardProps) {
         </div>
       </CardContent>
       <CardFooter className="min-h-[56px] pt-4">
-        {game.status === "open" && (
+        {game.status === 'open' && (
           <Button
             className="w-full"
             onClick={handleJoinGame}
             disabled={!!isGameFull || !!isUserInGame}
           >
-            {isGameFull ? "Game Full" : isUserInGame ? "Joined" : "Join Game"}
+            {isGameFull ? 'Game Full' : isUserInGame ? 'Joined' : 'Join Game'}
           </Button>
         )}
 
-        {game.status === "inProgress" && isUserInGame && (
+        {game.status === 'inProgress' && isUserInGame && (
           <Button className="w-full" onClick={handleRoll}>
             Roll for Winner
           </Button>
         )}
 
-        {game.status === "closed" &&(
+        {game.status === 'closed' && (
           <Button
             className="w-full"
             onClick={handleClaim}
             disabled={game.isClaimed || !isWinner}
           >
-            {isWinner ? game.isClaimed ? "Claimed" : "Claim Prize" : "Better Luck Next Time"}
+            {isWinner
+              ? game.isClaimed
+                ? 'Claimed'
+                : 'Claim Prize'
+              : 'Better Luck Next Time'}
           </Button>
         )}
       </CardFooter>
     </Card>
-  );
+  )
 }

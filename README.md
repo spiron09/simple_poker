@@ -3,7 +3,7 @@
 A fully decentralized, peer-to-peer poker/dice game built on the Solana blockchain. This project uses an Anchor program for the on-chain logic and a Next.js frontend for a modern, reactive user experience.
 
 ![Simple Poker Screenshot](https://user-images.githubusercontent.com/43688683/283351899-80587158-0151-411e-872a-111111111111.png)
-*(Suggestion: Replace the URL above with a link to a real screenshot of your application!)*
+_(Suggestion: Replace the URL above with a link to a real screenshot of your application!)_
 
 ## 🎮 How to Play
 
@@ -13,12 +13,13 @@ This game is deployed on the Solana **Devnet**. To play, you will need a Solana-
 
 1. **A Solana Wallet:** Install a browser extension wallet like [Phantom](https://phantom.app/) or [Solflare](https://solflare.com/).
 2. **Devnet SOL:** You need some "play" money to interact with the game. You can get free Devnet SOL from a faucet:
-    - **Easiest Method (Web):** Go to a web faucet like [solfaucet.com](https://solfaucet.com/), select "Devnet", enter your wallet address, and request an airdrop.
-    - **Developer Method (CLI):** If you have the Solana CLI installed, run the following command in your terminal:
 
-        ```bash
-        solana airdrop 2 <YOUR_WALLET_ADDRESS> --url devnet
-        ```
+   - **Easiest Method (Web):** Go to a web faucet like [solfaucet.com](https://solfaucet.com/), select "Devnet", enter your wallet address, and request an airdrop.
+   - **Developer Method (CLI):** If you have the Solana CLI installed, run the following command in your terminal:
+
+     ```bash
+     solana airdrop 2 <YOUR_WALLET_ADDRESS> --url devnet
+     ```
 
 ### Game Walkthrough
 
