@@ -3,7 +3,6 @@
 A fully decentralized, peer-to-peer poker/dice game built on the Solana blockchain. This project uses an Anchor program for the on-chain logic and a Next.js frontend for a modern, reactive user experience.
 
 ![Simple Poker Screenshot](https://user-images.githubusercontent.com/43688683/283351899-80587158-0151-411e-872a-111111111111.png)
-_(Suggestion: Replace the URL above with a link to a real screenshot of your application!)_
 
 ## 🎮 How to Play
 
